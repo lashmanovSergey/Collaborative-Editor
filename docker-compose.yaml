@@ -1,0 +1,12 @@
+services:
+  postgres:
+    container_name: editor-postgres
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    restart: always
+    ports:
+      - ${DB_PORT}:5432
+  
