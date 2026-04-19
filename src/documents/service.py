@@ -7,26 +7,66 @@ import uuid
 
 def get_documents_from_db(room_uuid: str) -> list:
     query = select(Document).where(Document.room_uuid == room_uuid)
-    documents = {
-        "documents": []
-    }
+
+    documents = { "documents": [] }
+
     with Session(engine) as session:
         for document in session.execute(query).scalars():
-            documents["documents"].append(document.document_uuid)
+            documents["documents"].append(
+                {
+                    'uuid': document.document_uuid,
+                    'name': document.name,
+                }
+            )
+
     return documents
 
-def create_document_in_db(room_uuid: str) -> str:
-    document_uuid = str(uuid.uuid4())
+def get_document_from_db(room_uuid: str, document_uuid) -> Document:
+    query = select(Document).where(
+        Document.room_uuid == room_uuid,
+        Document.document_uuid == document_uuid,
+    )
+
     with Session(engine) as session:
-        session.add(
-            Document(
-                room_uuid=room_uuid,
-                document_uuid=document_uuid,
-                content="",
-            )
+        document = session.execute(query).scalar()
+        session.expunge(document)
+        return document
+
+def create_document_in_db(room_uuid: str, name: str) -> Document:
+    document_uuid = str(uuid.uuid4())
+    
+    with Session(engine) as session:
+        document = Document(
+            room_uuid=room_uuid,
+            document_uuid=document_uuid,
+            content="",
+            name=name,
         )
+        session.add(document)
         session.commit()
-    return document_uuid
+
+        return {
+            'uuid': document_uuid,
+            'name': 'name'
+        }
+
+def update_document_name_in_db(room_uuid: str, document_uuid: str, name: str) -> None:
+    query = update(Document).where(
+        Document.room_uuid == room_uuid,
+        Document.document_uuid == document_uuid,
+    ).values(name=name)
+    with Session(engine) as session:
+        session.execute(query)
+        session.commit()
+
+def delete_document_from_db(room_uuid: str, document_uuid: str) -> None:
+    query = delete(Document).where(
+        Document.document_uuid == document_uuid,
+        Document.room_uuid == room_uuid
+    )
+    with Session(engine) as session:
+        session.execute(query)
+        session.commit()
 
 def get_document_content_from_db(room_uuid: str, document_uuid: str) -> str:
     query = select(Document).where(

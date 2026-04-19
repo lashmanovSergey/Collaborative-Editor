@@ -26,7 +26,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 def get_current_user(token: Annotated[str, Depends(get_token_from_cookie)]):
     try:
-        print(token)
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         
         username = payload.get("sub")

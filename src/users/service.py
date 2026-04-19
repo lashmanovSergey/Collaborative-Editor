@@ -17,6 +17,12 @@ def get_user_from_db(username: str) -> User:
     
     return user
 
+def check_user_in_db(username: str) -> bool:
+    query = select(User).where(User.username == username)
+
+    with Session(engine) as session:
+        return session.execute(query).scalar() != None
+
 def create_user_in_db(username: str, password: str) -> None:
     with Session(engine) as session:
         password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())

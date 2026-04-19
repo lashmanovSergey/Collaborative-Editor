@@ -11,6 +11,11 @@ class Room(Base):
         unique=True
     )
 
+    name = Column(
+        String(64),
+        nullable=False
+    )
+
     username = Column(
         ForeignKey("users.username")
     )

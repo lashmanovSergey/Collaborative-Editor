@@ -10,6 +10,11 @@ class Document(Base):
         ForeignKey("rooms.uuid")
     )
 
+    name = Column(
+        String(64),
+        nullable=False
+    )
+
     document_uuid = Column(
         String(64),
         primary_key=True
