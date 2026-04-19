@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import Response, JSONResponse
 from fastapi.requests import Request
 from src.auth.service import get_current_user, get_token_from_cookie
-from src.rooms.service import create_room_in_db, delete_room_from_db, get_all_rooms_from_db
+from src.rooms.service import create_room_in_db, delete_room_from_db, get_all_rooms_from_db, \
+    update_room_name_in_db
 from src.documents.service import get_documents_from_db
-from src.rooms.schemas import create_room_dto
+from src.rooms.schemas import create_room_dto, update_room_dto
 from src.service import check_uuid
 
 router_for_rooms = APIRouter(
@@ -55,4 +56,18 @@ def delete_room(uuid: str, request: Request):
         content = {
             "detail": "you deleted room"
         },
+    )
+
+@router_for_rooms.put("/rooms/{uuid}")
+def update_room(uuid: str, room_dto: update_room_dto, request: Request):
+    check_uuid(uuid)
+
+    token = get_token_from_cookie(request)
+    user = get_current_user(token=token)
+
+    room = update_room_name_in_db(uuid, user.username, room_dto.name)
+
+    return JSONResponse(
+        status_code=200,
+        content=room
     )

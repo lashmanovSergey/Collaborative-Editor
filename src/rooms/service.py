@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from src.database import engine
 from src.rooms.models import Room
 
@@ -30,6 +30,20 @@ def create_room_in_db(username: str, name) -> dict:
         return {
             'uuid': room_uuid,
             'name': name
+        }
+    
+def update_room_name_in_db(uuid: str, username: str, name: str) -> dict:
+    query = update(Room).where(
+        Room.username == username,
+        Room.uuid == uuid,
+    ).values(name=name)
+    with Session(engine) as session:
+        session.execute(query)
+        session.commit()
+
+        return {
+            'uuid': uuid,
+            'name': name,
         }
 
 def delete_room_from_db(uuid: str, username: str) -> None:

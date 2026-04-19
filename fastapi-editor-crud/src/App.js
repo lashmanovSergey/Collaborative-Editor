@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Login from './Login'
 import Profile from './Profile'
 import Register from './Register'
-import CodeBlock from './CodeBlock'
+import Document from './Document'
 
 function App() {
     return (
@@ -12,7 +12,7 @@ function App() {
                 <Route path='/auth' element={<Login />} />
                 <Route path='/profile' element={<Profile />} />
                 <Route path='/register' element={<Register />} />
-                <Route path='/editor' element={<CodeBlock />} />
+                <Route path='/rooms/:roomId/documents/:documentId' element={<Document />} />
             </Routes>
         </Router>
     )

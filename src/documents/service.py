@@ -21,7 +21,7 @@ def get_documents_from_db(room_uuid: str) -> list:
 
     return documents
 
-def get_document_from_db(room_uuid: str, document_uuid) -> Document:
+def get_document_from_db(room_uuid: str, document_uuid: str) -> dict:
     query = select(Document).where(
         Document.room_uuid == room_uuid,
         Document.document_uuid == document_uuid,
@@ -30,7 +30,12 @@ def get_document_from_db(room_uuid: str, document_uuid) -> Document:
     with Session(engine) as session:
         document = session.execute(query).scalar()
         session.expunge(document)
-        return document
+        
+        return {
+            'uuid': document_uuid,
+            'name': document.name,
+            'content': document.content,
+        }
 
 def create_document_in_db(room_uuid: str, name: str) -> Document:
     document_uuid = str(uuid.uuid4())
@@ -47,7 +52,7 @@ def create_document_in_db(room_uuid: str, name: str) -> Document:
 
         return {
             'uuid': document_uuid,
-            'name': 'name'
+            'name': name,
         }
 
 def update_document_name_in_db(room_uuid: str, document_uuid: str, name: str) -> None:
@@ -58,6 +63,10 @@ def update_document_name_in_db(room_uuid: str, document_uuid: str, name: str) ->
     with Session(engine) as session:
         session.execute(query)
         session.commit()
+        return {
+            'uuid': document_uuid,
+            'name': name
+        }
 
 def delete_document_from_db(room_uuid: str, document_uuid: str) -> None:
     query = delete(Document).where(
@@ -91,7 +100,7 @@ class DocumentConnectionManager:
         # {"document_uuid": []}
         self.active_connections: dict[str, list[WebSocket]] = {}
         # {"document_uuid": ""}
-        self.document_content: dict[str, dict[str, str]] = {} 
+        self.document_content: dict[str, str] = {} 
 
     async def connect(self, websocket: WebSocket, room_uuid: str, document_uuid: str) -> None:
         await websocket.accept()

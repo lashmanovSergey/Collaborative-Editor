@@ -1,14 +1,12 @@
 psycopg2
-psycopg2-binary
 uvicorn
-pydantic_settings
+pydantic-settings
 sqlalchemy
 fastapi
 bcrypt
 pyjwt
 pwdlib[argon2]
 python-multipart
-uuid
 websockets
 alembic
 fastapi-cors

@@ -18,6 +18,7 @@ import {
   LuPencil
 } from "react-icons/lu"
 import Loading from './Loading'
+import {useNavigate} from 'react-router-dom'
 
 {/* Helper Function */}
 const isNodeRemovable = (indexPath) => {
@@ -49,11 +50,13 @@ const ProfileFolders = () => {
   const [editingNode, setEditingNode] = useState(null);
   const [editValue, setEditValue] = useState('');
 
+  const navigate = useNavigate();
+
   const fetchCollection = async () => {
     try {
       setLoading(true);
 
-      let username, rooms, documents;
+      let username, rooms;
 
       {/* Get Username */}
       await fetch("http://localhost:8000/me", {
@@ -65,6 +68,7 @@ const ProfileFolders = () => {
         username = data['username'];
       });
 
+      
       {/* Get List of Rooms */}
       await fetch("http://localhost:8000/rooms", {
         method: 'GET',
@@ -78,14 +82,25 @@ const ProfileFolders = () => {
       for (let i = 0; i < rooms.length; i++) {
         let documents;
 
+        rooms[i]['children'] = [] 
+        rooms[i]['id'] = rooms[i]['uuid']
+        delete rooms[i]['uuid']
+
         {/* Get List of Documents in Room */}
-        await fetch(`http://localhost:8000/rooms/${rooms[i]['uuid']}/documents`, {
+        await fetch(`http://localhost:8000/rooms/${rooms[i]['id']}/documents`, {
           method: 'GET',
           credentials: 'include',
         }).then(async (response) => {
           return await response.json();
         }).then((data) => {
           documents = data['documents'];
+          for (let j = 0; j < documents.length; j++) {
+            rooms[i]['children'].push({
+              id: documents[j]['uuid'],
+              name: documents[j]['name'],
+              room_id: rooms[i]['id'],
+            })
+          }
         })
       }
 
@@ -100,7 +115,7 @@ const ProfileFolders = () => {
               id: `${username}`,
               name: `${username}`,
               childrenCount: rooms.length,
-              children: []
+              children: rooms
             },
             {
               id: 'shared',
@@ -125,8 +140,31 @@ const ProfileFolders = () => {
     fetchCollection();
   }, []);
 
-  {/* Node Action - Remove */}
-  const removeNode = (props) => {
+  // node action - remove room or document
+  const removeNode = async (props) => {
+    const { node, indexPath } = props;
+
+    // delete room or document based on depth level
+    if (indexPath.length - 1 === 1) {
+      await fetch(`http://localhost:8000/rooms/${node.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error('HTTP Error! Failed to remove Room.');
+        }
+      })
+    } else {
+      await fetch(`http://localhost:8000/rooms/${node.room_id}/documents/${node.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      }).then((response) => {
+        if(!response.ok) {
+          throw new Error('HTTP Error! Failed to remove Document.');
+        }
+      })
+    }
+
     setCollection(collection.remove([props.indexPath]));
   }
 
@@ -145,7 +183,7 @@ const ProfileFolders = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: 'Untitled'
+          name: 'Untitled Room'
         }),
         credentials: 'include',
       }).then(async (response) => {
@@ -172,7 +210,7 @@ const ProfileFolders = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: 'Untitled',
+          name: 'Untitled Document',
         }),
       }).then(async (response) => {
         return await response.json();
@@ -185,6 +223,7 @@ const ProfileFolders = () => {
         {
           id: folder['uuid'],
           name: folder['name'],
+          room_id: node.id,
         }
       ]
     }
@@ -198,10 +237,50 @@ const ProfileFolders = () => {
     setEditingNode(node);
   }
 
-  const saveEdit = (node, indexPath) => {
+  const saveEdit = async (node, indexPath) => {
     if (!editValue.trim()) return;
+
+    if (indexPath.length === 2) {
+      try {
+        const response = await fetch(`http://localhost:8000/rooms/${node.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            'name': editValue
+          })
+        });
+        if (!response.ok) {
+          throw new Error('HTTP Error! Failed to update Room name.');
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    } else {
+      try {
+        const response = await fetch(`http://localhost:8000/rooms/${node.room_id}/documents/${node.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            'name': editValue,
+          })
+        })
+        if (!response.ok) {
+          throw new Error('HTTP Error! Failed to update Document name.');
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+
     const updatedNode = { ...node, name: editValue };
     setCollection(collection.replace(indexPath, updatedNode));
+
     setEditingNode(null);
     setEditValue("");
   }
@@ -217,6 +296,10 @@ const ProfileFolders = () => {
     } else if (e.key == 'Escape') {
       cancelEdit();
     }
+  }
+
+  const handleDoubleClick = (e, node) => {
+    navigate(`/rooms/${node.room_id}/documents/${node.id}`)
   }
 
   if (loading) {
@@ -252,7 +335,9 @@ const ProfileFolders = () => {
                     />
                   </TreeView.BranchControl>
                 ) : (
-                  <TreeView.Item>
+                  <TreeView.Item
+                    onDoubleClick={(e) => handleDoubleClick(e, node)}
+                  >
                     <LuFile />
                     <TreeView.ItemText>{node.name}</TreeView.ItemText>
                     <TreeNodeActions
@@ -281,7 +366,9 @@ const ProfileFolders = () => {
                     />
                   </TreeView.BranchControl>
                 ) : (
-                  <TreeView.Item>
+                  <TreeView.Item
+                    onDoubleClick={(e) => handleDoubleClick(e, node)}
+                  >
                     <LuFile />
                     <Input
                       value={editValue}
