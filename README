@@ -12,11 +12,15 @@ first terminal:
  
 5. alembic upgrade head
 
-6. uvicorn src.main:app --reload
+6. python -m uvicorn src.main:app --reload
 
 second terminal:
 
-1. cd ./fastapi-editor-crud && serve -s ./build/ -p 3000
+cd ./fastapi-editor-crud && npx serve -s ./build/ -p 3000
+
+or
+
+cd ./fastapi-editor-crud && npm install && npm start
 
 now you can access your authentication page at localhost:3000/auth
 
