@@ -94,14 +94,16 @@ const ProfileFolders = () => {
           return await response.json();
         }).then((data) => {
           documents = data['documents'];
+          console.log(documents)
           for (let j = 0; j < documents.length; j++) {
             rooms[i]['children'].push({
-              id: documents[j]['uuid'],
+              id: documents[j]['document_uuid'],
               name: documents[j]['name'],
               room_id: rooms[i]['id'],
             })
           }
         })
+
       }
 
       const treeCollection = createTreeCollection({
@@ -116,12 +118,6 @@ const ProfileFolders = () => {
               name: `${username}`,
               childrenCount: rooms.length,
               children: rooms
-            },
-            {
-              id: 'shared',
-              name: 'shared',
-              childrenCount: 0,
-              children: []
             }
           ]
         },

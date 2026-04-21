@@ -20,5 +20,9 @@ class Room(Base):
         ForeignKey("users.username")
     )
 
-    def __repr__(self) -> str:
-        return f"Room(username={self.username!r}, uuid={self.uuid!r})"
+    def to_dict(self):
+        return {
+                'uuid': self.uuid,
+                'name': self.name,
+                'username': self.username,
+            }

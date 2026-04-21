@@ -16,5 +16,8 @@ class User(Base):
         nullable=False
     )
 
-    def __repr__(self) -> str:
-        return f"User(username={self.username!r})"
+    def to_dict(self):
+        # ignore password_hash for security reasons
+        return {
+                'username': username
+            }

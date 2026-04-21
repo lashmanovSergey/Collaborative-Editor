@@ -5,9 +5,17 @@ from src.database import engine
 from src.rooms.models import Room
 
 from src.rooms.exceptions import RoomNotFoundException
-from src.documents.service import get_documents_from_db
+from src.documents.database import get_documents
 
 import uuid
+
+def get_room_from_db(uuid: str, username: str) -> Room:
+    query = select(Room).where(Room.uuid == uuid, Room.username == username)
+
+    with Session(engine) as session:
+        room = session.execute(query).scalar()
+    
+    return room
 
 def find_room(uuid: str, username: str) -> None:
     query = select(Room).where(Room.uuid == uuid, Room.username == username)
@@ -67,7 +75,7 @@ def get_all_rooms_from_db(username: str) -> list:
                 {
                     'uuid': room.uuid,
                     'name': room.name,
-                    'childrenCount': len(get_documents_from_db(room.uuid)),
+                    'childrenCount': len(get_documents(room.uuid)),
                 }
             )
     return rooms

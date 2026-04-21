@@ -1,5 +1,4 @@
 from sqlalchemy import Column, String, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from src.models import Base
 
 class Document(Base):
@@ -10,19 +9,24 @@ class Document(Base):
         ForeignKey("rooms.uuid")
     )
 
-    name = Column(
-        String(64),
-        nullable=False
-    )
-
     document_uuid = Column(
         String(64),
         primary_key=True
+    )
+
+    name = Column(
+        String(64),
+        nullable=False
     )
 
     content = Column(
         String(2048)
     )
 
-    def __repr__(self) -> str:
-        return f"Document(room_uuid={self.uuid!r}, document_uuid={self.document_uuid!r})"
+    def to_dict(self):
+        return {
+                'room_uuid': self.room_uuid,
+                'name': self.name,
+                'document_uuid': self.document_uuid,
+                'content': self.content,
+            }
