@@ -65,7 +65,7 @@ const Profile = () => {
             maxW="1200px"
         >
             <Box 
-            minW={{ base: "90%", md: "500px" }} 
+            minW={{ base: "90%", md: "600px" }} 
             minH={{ base: "auto", md: "85%" }}
             >
             <Stack

@@ -1,19 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.requests import Request
-
+from src.auth.exceptions import inactive_user
+from typing import Annotated
+from src.users.models import User
 from src.users.schemas import user_auth_dto, user_reg_dto
-from src.config import settings
-from datetime import timedelta
-
-from src.users.service import get_user_from_db, create_user_in_db, check_user_password, check_user_in_db
 from src.users.exceptions import UsernameAlreadyExistsException, UserNotFoundException
-from src.auth.exceptions import InvalidCredentialsException
-from src.auth.service import create_access_token
-
-from src.auth.utils import get_token_from_cookie
-import jwt
-from jwt.exceptions import DecodeError
+from src.users.database import get_user, create_user
+from src.service import check_passwords
+from src.auth.service import get_current_user, create_access_token
 
 router_for_auth = APIRouter(
     prefix="",
@@ -21,21 +16,20 @@ router_for_auth = APIRouter(
 )
 
 @router_for_auth.post("/auth")
-def auth(user_dto: user_auth_dto):
-    # get user if exist
-    user = get_user_from_db(user_dto.username)
+def route_auth(user_dto: user_auth_dto):
+    user = get_user(user_dto.username)
 
-    # validate credentials
-    check_user_password(user.password_hash, user_dto.password)
+    # Check if user exist
+    if user == None:
+        raise InvalidCredentialsException
 
-    # create JWT Token
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    # Check if password valid
+    if check_passwords(user.password_hash, user_dto.password) == False:
+        raise InvalidCredentialsException
+
+    access_token = create_access_token(data={"sub": user.username})
 
     redirect_response = RedirectResponse(url="/profile", status_code=200)
-    
     redirect_response.set_cookie(
         key="access_token",
         value=f"{access_token}",
@@ -49,24 +43,17 @@ def auth(user_dto: user_auth_dto):
 
 @router_for_auth.post("/register")
 def register(user_dto: user_reg_dto):
-    # check if username is already exist
-    if check_user_in_db(user_dto.username):
+    user = get_user(user_dto.username)
+
+    # Check if username already in use
+    if user != None:
         raise UsernameAlreadyExistsException
     
-    # create user in db
-    create_user_in_db(user_dto.username, user_dto.password)
+    user = create_user(user_dto.username, user_dto.password)
 
-    # get user
-    user = get_user_from_db(user_dto.username)
-
-    # create JWT Token
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    access_token = create_access_token(data={"sub": user.username})
 
     redirect_response = RedirectResponse(url="/profile", status_code=200)
-
     redirect_response.set_cookie(
         key="access_token",
         value=f"{access_token}",
@@ -85,22 +72,14 @@ def logout():
     return redirect_response
 
 @router_for_auth.post("/me")
-def me(request: Request):
-    access_token = get_token_from_cookie(request)
-    try:
-        payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-    except DecodeError:
-        return JSONResponse(
-            status_code=400,
-            content={
-                'error':'invalid jwt token'
-            }
-        )
+def me(request: Request, user: Annotated[User, Depends(get_current_user)]):
+    if user == None:
+        raise inactive_user
 
     return JSONResponse(
         status_code=200,
         content={
-            'username': payload.get('sub')
+            'username': user.username
         }
     )
     

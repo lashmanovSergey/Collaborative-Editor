@@ -83,9 +83,12 @@ const ProfileFolders = () => {
         let documents;
 
         rooms[i]['children'] = [] 
+        rooms[i]['childrenCount'] = 0
         rooms[i]['id'] = rooms[i]['uuid']
         delete rooms[i]['uuid']
 
+        console.log(rooms[i])
+      
         {/* Get List of Documents in Room */}
         await fetch(`http://localhost:8000/rooms/${rooms[i]['id']}/documents`, {
           method: 'GET',
@@ -94,8 +97,8 @@ const ProfileFolders = () => {
           return await response.json();
         }).then((data) => {
           documents = data['documents'];
-          console.log(documents)
           for (let j = 0; j < documents.length; j++) {
+            rooms[i]['childrenCount'] += 1
             rooms[i]['children'].push({
               id: documents[j]['document_uuid'],
               name: documents[j]['name'],
@@ -193,11 +196,11 @@ const ProfileFolders = () => {
         {
           id: room['uuid'],
           name: room['name'],
-          childrenCount: room['childrenCount'],
+          childrenCount: 0,
         }
       ]
     } else {
-      let folder;
+      let document;
 
       await fetch(`http://localhost:8000/rooms/${node.id}/documents`, {
         method: 'POST',
@@ -207,18 +210,19 @@ const ProfileFolders = () => {
         },
         body: JSON.stringify({
           name: 'Untitled Document',
+          content: '',
         }),
       }).then(async (response) => {
         return await response.json();
       }).then((data) => {
-        folder = data;
+        document = data;
       });
 
       children = [
         ...(node.children || []),
         {
-          id: folder['uuid'],
-          name: folder['name'],
+          id: document['document_uuid'],
+          name: document['name'],
           room_id: node.id,
         }
       ]
@@ -237,15 +241,16 @@ const ProfileFolders = () => {
     if (!editValue.trim()) return;
 
     if (indexPath.length === 2) {
+
       try {
         const response = await fetch(`http://localhost:8000/rooms/${node.id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
           body: JSON.stringify({
-            'name': editValue
+            'name': editValue,
           })
         });
         if (!response.ok) {
@@ -257,17 +262,26 @@ const ProfileFolders = () => {
     } else {
       try {
         const response = await fetch(`http://localhost:8000/rooms/${node.room_id}/documents/${node.id}`, {
-          method: 'PUT',
+          method: 'GET',
+          credentials: 'include',
+        })
+
+        const data = await response.json();
+
+        const response2 = await fetch(`http://localhost:8000/rooms/${node.room_id}/documents/${node.id}`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
           credentials: 'include',
           body: JSON.stringify({
             'name': editValue,
+            'content': data['content'],
           })
         })
-        if (!response.ok) {
-          throw new Error('HTTP Error! Failed to update Document name.');
+
+        if (!response2.ok) {
+          throw new Error('HTTP Error! Failed to update Document.');
         }
       } catch (err) {
         setError(err.message);

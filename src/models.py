@@ -6,4 +6,3 @@ Base = declarative_base()
 import src.documents.models
 import src.users.models
 import src.rooms.models
-

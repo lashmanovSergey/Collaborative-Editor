@@ -1,25 +1,14 @@
-from src.exceptions import InvalidUUIDException
-from src.exceptions import AccessDeniedException
-from src.users.models import User
-from src.auth.service import get_current_user
-from src.rooms.service import get_room_from_db
-
-from typing import Annotated
-
-from fastapi import Depends
-from fastapi.requests import Request
-
+from src.exceptions import InvalidUUIDException, InvalidCredentialsException
 import uuid
+import bcrypt
 
-def check_uuid(uuid_: str, version: int = 4) -> None:
+def check_uuid(uuid_: str, version: int = 4) -> str:
     try:
         uuid.UUID(uuid_, version=version)
     except ValueError:
         raise InvalidUUIDException
+    return uuid_
 
-def check_user_room_access(room_uuid: str, user: Annotated[User, Depends(get_current_user)]) -> None:
-    if get_room_from_db(room_uuid, user.username) == None:
-        raise AccessDeniedException
-
-    
-    
+def check_passwords(password_hash: str, password: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+        

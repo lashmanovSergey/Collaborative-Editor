@@ -1,6 +1,7 @@
 from sqlalchemy import select, update, delete
 from src.database import SessionLocal
 from src.documents.models import Document
+import uuid
 
 def get_document(room_uuid: str, document_uuid: str) -> Document:
     """ GET document (document_uuid) in room (room_uuid) """
@@ -26,7 +27,7 @@ def get_documents(room_uuid: str) -> list[Document]:
 
     return documents
 
-def create_document(room_uuid: str, name: str) -> Document:
+def create_document(room_uuid: str, name: str, content: str = '') -> Document:
     """ CREATE document in room (room_uuid) """
     document_uuid = str(uuid.uuid4())
     
@@ -34,13 +35,13 @@ def create_document(room_uuid: str, name: str) -> Document:
         document = Document(
             room_uuid=room_uuid,
             document_uuid=document_uuid,
-            content="",
+            content=content,
             name=name,
         )
         session.add(document)
         session.commit()
 
-    return document
+    return get_document(room_uuid, document_uuid)
 
 def update_document(room_uuid: str, document_uuid: str, document: Document) -> Document:
     """ UPDATE document (document_uuid) in room (room_uuid) by new document """
@@ -49,7 +50,7 @@ def update_document(room_uuid: str, document_uuid: str, document: Document) -> D
         Document.document_uuid == document_uuid,
     ).values(
         name=document.name,
-        content=document.content
+        content=document.content,
     )
 
     with SessionLocal() as session:
