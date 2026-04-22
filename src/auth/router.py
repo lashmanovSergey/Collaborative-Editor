@@ -8,6 +8,7 @@ from src.users.schemas import user_auth_dto, user_reg_dto
 from src.users.exceptions import UsernameAlreadyExistsException, UserNotFoundException
 from src.users.database import get_user, create_user
 from src.service import check_passwords
+from src.exceptions import InvalidCredentialsException
 from src.auth.service import get_current_user, create_access_token
 
 router_for_auth = APIRouter(

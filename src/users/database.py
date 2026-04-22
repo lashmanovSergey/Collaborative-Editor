@@ -22,4 +22,4 @@ def create_user(username: str, password: str) -> User:
         session.add(user)
         session.commit()
 
-    return user
+    return get_user(username)
