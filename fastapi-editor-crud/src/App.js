@@ -4,6 +4,7 @@ import Login from './Login'
 import Profile from './Profile'
 import Register from './Register'
 import Document from './Document'
+import { Navigate } from 'react-router-dom';
 
 function App() {
     return (
@@ -13,6 +14,7 @@ function App() {
                 <Route path='/profile' element={<Profile />} />
                 <Route path='/register' element={<Register />} />
                 <Route path='/rooms/:roomId/documents/:documentId' element={<Document />} />
+                <Route path='*' element={<Navigate to='/auth' replace />} />
             </Routes>
         </Router>
     )

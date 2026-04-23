@@ -189,7 +189,7 @@ const Document = () => {
                 console.log('Auto-saving document...');
                 saveDocument(currentContentRef.current, true);
             }
-        }, 10000); // 5 minutes
+        }, 300000); // 5 minutes
         
         return () => {
             if (autoSaveIntervalRef.current) {
